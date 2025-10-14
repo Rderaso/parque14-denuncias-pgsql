@@ -236,6 +236,38 @@ router.put('/:id/ocultar', async (req, res) => {
     }
 });
 
+// ====== PUT /api/denuncias/:id/mostrar - Mostrar denuncia oculta ======
+router.put('/:id/mostrar', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await db.query(
+            'UPDATE denuncias SET oculta_temporalmente = FALSE WHERE id = $1 RETURNING *',
+            [id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Denuncia no encontrada'
+            });
+        }
+
+        console.log(`✅ Denuncia ${id} restaurada (visible de nuevo)`);
+
+        res.json({
+            success: true,
+            message: 'Denuncia restaurada y visible',
+            data: result.rows[0]
+        });
+    } catch (error) {
+        console.error('❌ Error mostrando denuncia:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al mostrar denuncia'
+        });
+    }
+});
+
 // ====== DELETE /api/denuncias/:id - Eliminar denuncia ======
 router.delete('/:id', async (req, res) => {
     try {
