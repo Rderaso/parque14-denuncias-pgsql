@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Denuncias Parque 14</title>
+
+    <!-- API Backend PostgreSQL -->
+    <script src="js/api-backend.js"></script>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Flatpickr -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+
+    <style>
+        :root {
+            --primary-green: #2E7D32;
+            --secondary-green: #4CAF50;
+            --light-green: #E8F5E9;
+            --dark-green: #1B5E20;
+            --warning-orange: #FF9800;
+            --danger-red: #F44336;
+            --info-blue: #2196F3;
+        }
+
+        body {
+            background: linear-gradient(135deg, #E8F5E9 0%, #F1F8E9 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+
+        .header-banner {
+            background: linear-gradient(135deg, var(--primary-green) 0%, var(--secondary-green) 100%);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 4px 20px rgba(46, 125, 50, 0.3);
+            margin-bottom: 1.5rem;
+        }
+
+        .header-banner h1 {
+            font-weight: 600;
+            font-size: 1.6rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 0;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .status-indicator {
+            background: rgba(255,255,255,0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .nav-tabs {
+            border-bottom: 3px solid var(--primary-green);
+            margin-bottom: 2rem;
+        }
+
+        .nav-tabs .nav-link {
+            color: var(--primary-green);
+            font-weight: 600;
+            padding: 1rem 1.5rem;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tabs .nav-link:hover {
+            background-color: var(--light-green);
+            color: var(--dark-green);
+            transform: translateY(-2px);
+        }
+
+        .nav-tabs .nav-link.active {
+            background-color: var(--primary-green);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 10px rgba(46, 125, 50, 0.3);
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+            color: white;
+            font-weight: 600;
+            padding: 1.25rem 1.5rem;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #E0E0E0;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--secondary-green);
+            box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+            border: none;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--dark-green), var(--primary-green));
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(46, 125, 50, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--secondary-green), #66BB6A);
+            border: none;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #FF9800, #FFB74D);
+            border: none;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #F44336, #EF5350);
+            border: none;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            display: inline-block;
+        }
+
+        .status-pendiente {
+            background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+            color: #E65100;
+            border: 2px solid #FF9800;
+        }
+
+        .status-proceso {
+            background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
+            color: #0D47A1;
+            border: 2px solid #2196F3;
+        }
+
+        .status-resuelto {
+            background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+            color: #1B5E20;
+            border: 2px solid #4CAF50;
+        }
+
+        .status-cancelado {
+            background: linear-gradient(135deg, #FFEBEE, #FFCDD2);
+            color: #C62828;
+            border: 2px solid #F44336;
+        }
+
+        .denuncia-item {
+            border-left: 5px solid var(--secondary-green);
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            position: relative;
+        }
+
+        .denuncia-item:hover {
+            transform: translateX(10px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-left-color: var(--primary-green);
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary-green);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .stat-label {
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .alert {
+            border: none;
+            border-radius: 10px;
+            padding: 1rem 1.5rem;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+            color: var(--dark-green);
+            border-left: 4px solid var(--secondary-green);
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, #FFEBEE, #FFCDD2);
+            color: #C62828;
+            border-left: 4px solid var(--danger-red);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--dark-green);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .required {
+            color: var(--danger-red);
+        }
+
+        /* Tabla de reportes */
+        .table-responsive {
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead th {
+            background: linear-gradient(135deg, #e9ecef, #f1f3f4);
+            color: #495057;
+            font-weight: 600;
+            border: none;
+            padding: 1rem;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .table tbody td {
+            padding: 0.75rem 1rem;
+            vertical-align: middle;
+            border-top: 1px solid #E0E0E0;
+        }
+
+        .table tbody tr:nth-child(even) {
+            background-color: #f1f8e9;
+        }
+
+        .table tbody tr:hover {
+            background-color: #e8f5e9;
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .badge {
+            padding: 0.5rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .badge-green {
+            background: linear-gradient(135deg, var(--secondary-green), #66BB6A);
+            color: white;
+        }
+
+        .badge-correlativo {
+            background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+            color: white;
+            font-weight: 700;
+        }
+
+        .dias-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 15px;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .dias-verde {
+            background: linear-gradient(135deg, #4CAF50, #66BB6A);
+            color: white;
+        }
+
+        .dias-amarillo {
+            background: linear-gradient(135deg, #FF9800, #FFB74D);
+            color: white;
+        }
+
+        .dias-rojo {
+            background: linear-gradient(135deg, #F44336, #EF5350);
+            color: white;
+        }
+
+        .dias-resuelto {
+            background: linear-gradient(135deg, #4CAF50, #66BB6A);
+            color: white;
+        }
+
+        /* Animaciones suaves */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .tab-content {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-banner {
+                padding: 1rem 0;
+            }
+
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.5rem;
+            }
+
+            .stat-number {
+                font-size: 2rem;
+            }
+
+            .nav-tabs .nav-link {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Estilos para WhatsApp modal */
+        .whatsapp-modal .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        .whatsapp-modal .modal-header {
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .whatsapp-preview {
+            background: #F0F0F0;
+            padding: 1rem;
+            border-radius: 10px;
+            font-family: monospace;
+            white-space: pre-line;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Mejoras visuales para la sección de reportes */
+        .filtros-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header-banner">
+        <div class="container">
+            <div class="header-content">
+                <div>
+                    <h1>
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Sistema de Denuncias Parque 14
+                    </h1>
+                </div>
+                <div class="status-indicator" id="statusIndicator">
+                    <i class="fas fa-database me-1"></i>
+                    Base de Datos Activa
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Navegación por pestañas -->
+        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="nueva-tab" data-bs-toggle="tab" data-bs-target="#nueva" type="button" role="tab">
+                    <i class="fas fa-plus-circle me-2"></i>🆕 Nueva Denuncia
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="historial-tab" data-bs-toggle="tab" data-bs-target="#historial" type="button" role="tab">
+                    <i class="fas fa-list me-2"></i>📋 Historial
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="estadisticas-tab" data-bs-toggle="tab" data-bs-target="#estadisticas" type="button" role="tab">
+                    <i class="fas fa-chart-pie me-2"></i>📊 Estadísticas
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="reportes-tab" data-bs-toggle="tab" data-bs-target="#reportes" type="button" role="tab">
+                    <i class="fas fa-chart-bar me-2"></i>📈 Reportes
+                </button>
+            </li>
+        </ul>
+
+        <!-- Contenido de las pestañas -->
+        <div class="tab-content" id="mainTabsContent">
+            <!-- Pestaña: Nueva Denuncia -->
+            <div class="tab-pane fade show active" id="nueva" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Nueva Denuncia
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="denunciaForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="lugar" class="form-label">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                            Lugar <span class="required">*</span>
+                                        </label>
+                                        <select class="form-select" id="lugar" required>
+                                            <option value="">Seleccionar ubicación</option>
+                                            <optgroup label="Áreas Principales">
+                                                <option value="Airbnb">Airbnb</option>
+                                                <option value="Gimnasio">Gimnasio</option>
+                                                <option value="Ingreso de vehículos">Ingreso de vehículos</option>
+                                                <option value="Lobby">Lobby</option>
+                                                <option value="Parqueo del lobby">Parqueo del lobby</option>
+                                                <option value="Piscina">Piscina</option>
+                                            </optgroup>
+                                            <optgroup label="Ascensores">
+                                                <option value="Ascensor Torre A">Torre A</option>
+                                                <option value="Ascensor Torre B">Torre B</option>
+                                                <option value="Ascensor Torre C">Torre C</option>
+                                                <option value="Ascensor Torre D">Torre D</option>
+                                            </optgroup>
+                                            <optgroup label="Torres">
+                                                <option value="Torre A">Torre A</option>
+                                                <option value="Torre B">Torre B</option>
+                                                <option value="Torre C">Torre C</option>
+                                                <option value="Torre D">Torre D</option>
+                                            </optgroup>
+                                            <optgroup label="Niveles">
+                                                <option value="Nivel 1">Nivel 1</option>
+                                                <option value="Nivel 1 Amenidades">Nivel 1 Amenidades</option>
+                                                <option value="Nivel 2">Nivel 2</option>
+                                                <option value="Nivel 3">Nivel 3</option>
+                                                <option value="Nivel 4">Nivel 4</option>
+                                                <option value="Nivel 5">Nivel 5</option>
+                                                <option value="Nivel 6">Nivel 6</option>
+                                                <option value="Nivel 7">Nivel 7</option>
+                                                <option value="Nivel 8">Nivel 8</option>
+                                                <option value="Nivel 9">Nivel 9</option>
+                                                <option value="Nivel 10">Nivel 10</option>
+                                                <option value="Nivel 11">Nivel 11</option>
+                                                <option value="Nivel 12">Nivel 12</option>
+                                                <option value="Nivel 13">Nivel 13</option>
+                                                <option value="Nivel 14">Nivel 14</option>
+                                                <option value="Nivel 15">Nivel 15</option>
+                                                <option value="Nivel 16">Nivel 16</option>
+                                                <option value="Nivel 17">Nivel 17</option>
+                                                <option value="Nivel 18">Nivel 18</option>
+                                                <option value="Nivel 19">Nivel 19</option>
+                                                <option value="Nivel 20">Nivel 20</option>
+                                                <option value="Nivel 21">Nivel 21</option>
+                                                <option value="Nivel 22">Nivel 22</option>
+                                                <option value="Nivel 23">Nivel 23</option>
+                                                <option value="Nivel 24">Nivel 24</option>
+                                            </optgroup>
+                                            <optgroup label="Sótanos">
+                                                <option value="Sótano 1">Sótano 1</option>
+                                                <option value="Sótano 2">Sótano 2</option>
+                                                <option value="Sótano 3">Sótano 3</option>
+                                                <option value="Sótano 4">Sótano 4</option>
+                                                <option value="Sótano 5">Sótano 5</option>
+                                                <option value="Sótano 6">Sótano 6</option>
+                                            </optgroup>
+                                            <optgroup label="General">
+                                                <option value="En todo el Parque">En todo el Parque</option>
+                                                <option value="Otra ubicación">Otra ubicación</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="comision" class="form-label">
+                                            <i class="fas fa-users"></i>
+                                            Comisión <span class="required">*</span>
+                                        </label>
+                                        <select class="form-select" id="comision" required>
+                                            <option value="">Selecciona tu comisión</option>
+                                            <option value="Comisión de Administración">⚙️ Comisión de Administración</option>
+                                            <option value="Comisión de Infraestructura">🔧 Comisión de Infraestructura</option>
+                                            <option value="Comisión de Rentas Cortas">🏠 Comisión de Rentas Cortas</option>
+                                            <option value="Comisión de Seguridad">🛡️ Comisión de Seguridad</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="descripcion" class="form-label">
+                                    <i class="fas fa-file-alt"></i>
+                                    Descripción <span class="required">*</span>
+                                </label>
+                                <textarea class="form-control" id="descripcion" rows="4" required
+                                          placeholder="Describe detalladamente la situación..."></textarea>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="aQuienSeReporto" class="form-label">
+                                            <i class="fas fa-user-tie"></i>
+                                            A quién se reportó <span class="required">*</span>
+                                        </label>
+                                        <input type="text" class="form-control" id="aQuienSeReporto" required
+                                               placeholder="Ej: Administrador, Portero, Consejo">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="tuNombre" class="form-label">
+                                            <i class="fas fa-user"></i>
+                                            Tu nombre <span class="required">*</span>
+                                        </label>
+                                        <input type="text" class="form-control" id="tuNombre" required
+                                               placeholder="Nombre completo del reportante">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-paper-plane me-2"></i>Enviar Reporte
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña: Historial -->
+            <div class="tab-pane fade" id="historial" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list me-2"></i>
+                            Historial de Denuncias
+                        </h5>
+                        <div>
+                            <button class="btn btn-outline-light btn-sm me-2" onclick="cargarHistorial()">
+                                <i class="fas fa-sync-alt me-1"></i>Actualizar
+                            </button>
+                            <input type="text" id="buscarHistorial" class="form-control d-inline-block"
+                                   style="width: 200px;" placeholder="Buscar...">
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="listaHistorial">
+                            <div class="text-center py-5">
+                                <div class="loading-spinner"></div>
+                                <p class="mt-3">Cargando historial...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña: Estadísticas -->
+            <div class="tab-pane fade" id="estadisticas" role="tabpanel">
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-4">
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalDenuncias">0</div>
+                            <div class="stat-label">Total Denuncias</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="stat-card">
+                            <div class="stat-number" id="pendientes">0</div>
+                            <div class="stat-label">Pendientes</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="stat-card">
+                            <div class="stat-number" id="enProgreso">0</div>
+                            <div class="stat-label">En Progreso</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="stat-card">
+                            <div class="stat-number" id="resueltas">0</div>
+                            <div class="stat-label">Resueltas</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Por Estado</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="chartEstado"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Por Tipo</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="chartTipo"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Por Comisión</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="chartComision"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Comportamiento Semanal</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="chartSemanal"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña: Reportes -->
+            <div class="tab-pane fade" id="reportes" role="tabpanel">
+                <div class="filtros-container">
+                    <h6 class="mb-3"><i class="fas fa-filter me-2"></i>Filtros de Búsqueda</h6>
+
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Desde:</label>
+                            <input type="text" id="reporteFechaDesde" class="form-control" placeholder="Seleccionar fecha">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Hasta:</label>
+                            <input type="text" id="reporteFechaHasta" class="form-control" placeholder="Seleccionar fecha">
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Tipo:</label>
+                            <select id="reporteTipo" class="form-select">
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Lugar:</label>
+                            <select id="reporteLugar" class="form-select">
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Estado:</label>
+                            <select id="reporteEstado" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="pendiente">Pendiente</option>
+                                <option value="proceso">En Proceso</option>
+                                <option value="resuelto">Resuelto</option>
+                                <option value="cancelado">Cancelado</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Comisión:</label>
+                            <select id="reporteComision" class="form-select">
+                                <option value="">Todas</option>
+                                <option value="Comisión de Administración">Comisión de Administración</option>
+                                <option value="Comisión de Infraestructura">Comisión de Infraestructura</option>
+                                <option value="Comisión de Rentas Cortas">Comisión de Rentas Cortas</option>
+                                <option value="Comisión de Seguridad">Comisión de Seguridad</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3 d-flex align-items-end">
+                            <button class="btn btn-primary w-100" onclick="generarReporte()">
+                                <i class="fas fa-search me-2"></i>Generar Reporte
+                            </button>
+                        </div>
+                        <div class="col-md-4 mb-3 d-flex align-items-end">
+                            <button class="btn btn-success w-100" onclick="exportarExcel()" style="display:none;" id="btnExcel">
+                                <i class="fas fa-file-excel me-2"></i>Exportar Excel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tablaReportes" style="display:none;">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Correlativo</th>
+                                    <th>Lugar</th>
+                                    <th>Tipo</th>
+                                    <th>Reportante</th>
+                                    <th>Reportado a</th>
+                                    <th>Días</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaReportesBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal WhatsApp -->
+    <div class="modal fade whatsapp-modal" id="whatsappModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fab fa-whatsapp me-2"></i>
+                        Compartir por WhatsApp
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">Tu denuncia ha sido guardada exitosamente. Puedes compartir esta información por WhatsApp:</p>
+
+                    <div class="whatsapp-preview" id="whatsappPreview"></div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                        <button type="button" class="btn btn-outline-secondary me-md-2" onclick="copiarMensaje()">
+                            <i class="fas fa-copy me-2"></i>Copiar Mensaje
+                        </button>
+                        <button type="button" class="btn btn-success" onclick="abrirWhatsApp()">
+                            <i class="fab fa-whatsapp me-2"></i>Abrir en WhatsApp
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Variables globales
+        let denuncias = [];
+        let contadorCorrelativo = 1;
+        let currentWhatsAppMessage = '';
+
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 Iniciando Sistema de Denuncias Parque 14 - PostgreSQL');
+
+            // Esperar a que el backend esté disponible
+            try {
+                await window.backendAPI.verificarConexion();
+                console.log('✅ Backend PostgreSQL conectado');
+                document.getElementById('statusIndicator').innerHTML = '<i class="fas fa-database me-1"></i> PostgreSQL Conectada';
+                inicializarApp();
+            } catch (error) {
+                console.error('❌ Error: Backend no disponible', error);
+                document.getElementById('statusIndicator').innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i> Error de Conexión';
+                mostrarError('Error de conexión con la base de datos PostgreSQL');
+            }
+        });
+
+        function inicializarApp() {
+            configurarFormulario();
+            cargarDenuncias();
+            configurarCalendarios();
+            configurarBusqueda();
+
+            // Configurar fechas por defecto para reportes
+            configurarFechasDefecto();
+        }
+
+        // Configurar fechas por defecto
+        function configurarFechasDefecto() {
+            const hoy = new Date();
+            const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+
+            const desdeInput = document.getElementById('reporteFechaDesde');
+            const hastaInput = document.getElementById('reporteFechaHasta');
+
+            if (desdeInput && hastaInput) {
+                desdeInput.value = formatearFecha(primerDia);
+                hastaInput.value = formatearFecha(hoy);
+            }
+        }
+
+        // Configurar calendarios
+        function configurarCalendarios() {
+            const configCalendario = {
+                locale: "es",
+                dateFormat: "d-m-y",
+                allowInput: true
+            };
+
+            flatpickr("#reporteFechaDesde", configCalendario);
+            flatpickr("#reporteFechaHasta", configCalendario);
+        }
+
+        // Configurar búsqueda
+        function configurarBusqueda() {
+            const buscarInput = document.getElementById('buscarHistorial');
+            if (buscarInput) {
+                buscarInput.addEventListener('input', filtrarHistorial);
+            }
+        }
+
+        // Formatear fecha
+        function formatearFecha(fecha) {
+            const día = fecha.getDate().toString().padStart(2, '0');
+            const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+            const año = fecha.getFullYear().toString().substr(-2);
+            return `${día}-${mes}-${año}`;
+        }
+
+        // Configurar formulario
+        function configurarFormulario() {
+            const form = document.getElementById('denunciaForm');
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await enviarDenuncia();
+            });
+        }
+
+        // Detectar tipo automáticamente
+        function detectarTipo(descripcion, lugar) {
+            const texto = (descripcion + " " + lugar).toLowerCase();
+
+            // Sistema de detección por palabras clave
+            const categorias = {
+                'Ruido': ['ruido', 'música', 'sonido', 'alto', 'fuerte', 'bulla', 'escándalo', 'grito'],
+                'Mascotas': ['mascota', 'perro', 'gato', 'animal', 'ladrido', 'maullido', 'excremento'],
+                'Áreas comunes': ['área común', 'zonas comunes', 'piscina', 'gimnasio', 'salón', 'terraza'],
+                'Mantenimiento': ['mantenimiento', 'reparación', 'daño', 'roto', 'fuga', 'falla', 'arreglo'],
+                'Seguridad': ['seguridad', 'robo', 'hurto', 'extraño', 'sospechoso', 'intruso'],
+                'Apartamento': ['apartamento', 'apto', 'vecino', 'arriba', 'abajo', 'al lado'],
+                'Otro': []
+            };
+
+            for (const [categoria, palabras] of Object.entries(categorias)) {
+                if (palabras.some(palabra => texto.includes(palabra))) {
+                    return categoria;
+                }
+            }
+
+            return 'Otro';
+        }
+
+        // Enviar denuncia
+        async function enviarDenuncia() {
+            try {
+                const submitBtn = document.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<div class="loading-spinner"></div> Enviando...';
+                submitBtn.disabled = true;
+
+                // Recopilar datos del formulario
+                const lugar = document.getElementById('lugar').value;
+                const descripcion = document.getElementById('descripcion').value;
+                const aQuienSeReporto = document.getElementById('aQuienSeReporto').value;
+                const tuNombre = document.getElementById('tuNombre').value;
+                const comision = document.getElementById('comision').value;
+
+                // Detectar tipo automáticamente
+                const tipo = detectarTipo(descripcion, lugar);
+
+                const denunciaData = {
+                    lugar: lugar,
+                    tipo: tipo,
+                    descripcion: descripcion,
+                    a_quien_se_reporto: aQuienSeReporto,
+                    tu_nombre: tuNombre,
+                    comision: comision
+                };
+
+                // Guardar en PostgreSQL vía Backend
+                const resultado = await window.backendAPI.crearDenuncia(denunciaData);
+
+                console.log('✅ Denuncia guardada con correlativo:', resultado.correlativo);
+
+                // Generar mensaje de WhatsApp
+                const fechaFormateada = formatearFecha(new Date());
+                const correlativoFormateado = `${resultado.correlativo}-${fechaFormateada}`;
+
+                currentWhatsAppMessage = `*DENUNCIA - PARQUE 14*
+========================
+
+*Correlativo:* ${correlativoFormateado}
+*Fecha:* ${fechaFormateada}
+*Lugar:* ${lugar}
+*Tipo:* ${tipo}
+*Descripción:* ${descripcion}
+*Reportado por:* ${tuNombre}
+*Reportado a:* ${aQuienSeReporto}
+*Comisión:* ${comision}
+*Estado:* Pendiente
+
+_Mensaje generado automáticamente por el Sistema de Denuncias Parque 14_`;
+
+                // Mostrar modal de WhatsApp
+                document.getElementById('whatsappPreview').textContent = currentWhatsAppMessage;
+                new bootstrap.Modal(document.getElementById('whatsappModal')).show();
+
+                // Limpiar formulario
+                document.getElementById('denunciaForm').reset();
+
+                // Recargar denuncias
+                await cargarDenuncias();
+
+            } catch (error) {
+                console.error('❌ Error enviando denuncia:', error);
+                mostrarError('Error al enviar la denuncia: ' + error.message);
+            } finally {
+                const submitBtn = document.querySelector('button[type="submit"]');
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Enviar Reporte';
+                submitBtn.disabled = false;
+            }
+        }
+
+        // Cargar denuncias desde PostgreSQL
+        async function cargarDenuncias() {
+            try {
+                denuncias = await window.backendAPI.cargarDenuncias();
+
+                // Calcular próximo correlativo
+                let maxCorrelativo = 0;
+                denuncias.forEach(d => {
+                    if (d.correlativo && d.correlativo > maxCorrelativo) {
+                        maxCorrelativo = d.correlativo;
+                    }
+                });
+                contadorCorrelativo = maxCorrelativo + 1;
+
+                console.log(`📊 Cargadas ${denuncias.length} denuncias desde PostgreSQL`);
+                mostrarHistorial();
+                actualizarEstadisticas();
+                actualizarFiltrosReportes();
+            } catch (error) {
+                console.error('❌ Error cargando denuncias:', error);
+                mostrarError('Error al cargar las denuncias');
+            }
+        }
+
+        // Cargar historial (función separada para botón actualizar)
+        function cargarHistorial() {
+            const container = document.getElementById('listaHistorial');
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="loading-spinner"></div>
+                    <p class="mt-3">Actualizando historial...</p>
+                </div>
+            `;
+
+            setTimeout(() => {
+                mostrarHistorial();
+            }, 1000);
+        }
+
+        // Mostrar historial
+        function mostrarHistorial() {
+            const container = document.getElementById('listaHistorial');
+
+            if (denuncias.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay denuncias registradas</h5>
+                        <p class="text-muted">Cuando se registren denuncias aparecerán aquí</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = denuncias.map(denuncia => {
+                const fecha = denuncia.fecha_creacion ? new Date(denuncia.fecha_creacion) : new Date();
+                const fechaFormateada = formatearFecha(fecha);
+                const correlativo = denuncia.correlativo || '0';
+                const correlativoFormateado = `${correlativo}-${fechaFormateada}`;
+
+                let estadoClass = 'status-pendiente';
+                let estadoTexto = 'Pendiente';
+
+                if (denuncia.estado === 'proceso') {
+                    estadoClass = 'status-proceso';
+                    estadoTexto = 'En Proceso';
+                } else if (denuncia.estado === 'resuelto') {
+                    estadoClass = 'status-resuelto';
+                    estadoTexto = 'Resuelto';
+                } else if (denuncia.estado === 'cancelado') {
+                    estadoClass = 'status-cancelado';
+                    estadoTexto = 'Cancelado';
+                }
+
+                return `
+                    <div class="denuncia-item" data-id="${denuncia.id}">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h6 class="mb-2">
+                                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                    ${denuncia.tipo || 'Tipo no especificado'}
+                                </h6>
+                                <span class="badge badge-correlativo me-2">#${correlativoFormateado}</span>
+                                <span class="status-badge ${estadoClass}">${estadoTexto}</span>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted d-block">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    ${fechaFormateada}
+                                </small>
+                                ${denuncia.estado !== 'resuelto' && denuncia.estado !== 'cancelado' ?
+                                    '<button class="btn btn-sm btn-outline-success mt-2" onclick="procederCerrar(' + denuncia.id + ')">Proceder a cerrar</button>' :
+                                    ''
+                                }
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong><i class="fas fa-map-marker-alt me-2"></i>Lugar:</strong> ${denuncia.lugar || 'No especificado'}</p>
+                                <p><strong><i class="fas fa-user me-2"></i>Reportado por:</strong> ${denuncia.tu_nombre || 'No especificado'}</p>
+                                <p><strong><i class="fas fa-user-tie me-2"></i>Reportado a:</strong> ${denuncia.a_quien_se_reporto || 'No especificado'}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong><i class="fas fa-users me-2"></i>Comisión:</strong> ${denuncia.comision || 'No asignada'}</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-2">
+                            <strong><i class="fas fa-file-alt me-2"></i>Descripción:</strong>
+                            <p class="mb-0">${denuncia.descripcion || 'Sin descripción'}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
+        // Filtrar historial
+        function filtrarHistorial() {
+            const termino = document.getElementById('buscarHistorial').value.toLowerCase();
+            const items = document.querySelectorAll('.denuncia-item');
+
+            items.forEach(item => {
+                const texto = item.textContent.toLowerCase();
+                if (texto.includes(termino)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // Proceder a cerrar denuncia
+        async function procederCerrar(id) {
+            const confirmacion = confirm('¿Estás seguro de que quieres marcar esta denuncia como resuelta?');
+
+            if (confirmacion) {
+                try {
+                    await window.backendAPI.actualizarEstado(id, 'resuelto');
+                    mostrarExito('Denuncia marcada como resuelta');
+                    await cargarDenuncias();
+                } catch (error) {
+                    console.error('Error actualizando denuncia:', error);
+                    mostrarError('Error al actualizar la denuncia');
+                }
+            }
+        }
+
+        // Actualizar estadísticas
+        function actualizarEstadisticas() {
+            const total = denuncias.length;
+            const pendientes = denuncias.filter(d => d.estado === 'pendiente' || !d.estado).length;
+            const enProgreso = denuncias.filter(d => d.estado === 'proceso').length;
+            const resueltas = denuncias.filter(d => d.estado === 'resuelto').length;
+
+            document.getElementById('totalDenuncias').textContent = total;
+            document.getElementById('pendientes').textContent = pendientes;
+            document.getElementById('enProgreso').textContent = enProgreso;
+            document.getElementById('resueltas').textContent = resueltas;
+
+            // Actualizar gráficos
+            actualizarGraficos();
+        }
+
+        // Actualizar gráficos
+        function actualizarGraficos() {
+            // Gráfico por Estado
+            const estados = ['Pendiente', 'En Proceso', 'Resuelto', 'Cancelado'];
+            const datosEstado = [
+                denuncias.filter(d => d.estado === 'pendiente' || !d.estado).length,
+                denuncias.filter(d => d.estado === 'proceso').length,
+                denuncias.filter(d => d.estado === 'resuelto').length,
+                denuncias.filter(d => d.estado === 'cancelado').length
+            ];
+
+            crearGrafico('chartEstado', 'pie', estados, datosEstado, ['#FF9800', '#2196F3', '#4CAF50', '#F44336']);
+
+            // Gráfico por Tipo
+            const tipos = [...new Set(denuncias.map(d => d.tipo || 'Sin tipo'))];
+            const datosTipo = tipos.map(tipo =>
+                denuncias.filter(d => (d.tipo || 'Sin tipo') === tipo).length
+            );
+
+            crearGrafico('chartTipo', 'bar', tipos, datosTipo, '#4CAF50');
+
+            // Gráfico por Comisión
+            const comisiones = [...new Set(denuncias.map(d => d.comision || 'Sin asignar'))];
+            const datosComision = comisiones.map(comision =>
+                denuncias.filter(d => (d.comision || 'Sin asignar') === comision).length
+            );
+
+            crearGrafico('chartComision', 'pie', comisiones, datosComision, ['#2E7D32', '#4CAF50', '#66BB6A', '#81C784']);
+
+            // Gráfico Semanal
+            const ultimosSieteDias = [];
+            const hoy = new Date();
+
+            for (let i = 7; i >= 0; i--) {
+                const fecha = new Date(hoy);
+                fecha.setDate(fecha.getDate() - i);
+                ultimosSieteDias.push(fecha);
+            }
+
+            const etiquetasDias = ultimosSieteDias.map(fecha =>
+                fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })
+            );
+
+            const datosSemanal = ultimosSieteDias.map(fecha => {
+                const fechaStr = fecha.toDateString();
+                return denuncias.filter(d => {
+                    if (!d.fecha_creacion) return false;
+                    const fechaDenuncia = new Date(d.fecha_creacion).toDateString();
+                    return fechaDenuncia === fechaStr;
+                }).length;
+            });
+
+            crearGraficoLinea('chartSemanal', etiquetasDias, datosSemanal);
+        }
+
+        // Crear gráfico
+        function crearGrafico(canvasId, tipo, etiquetas, datos, colores) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+
+            // Destruir gráfico existente si existe
+            if (window[canvasId + 'Chart']) {
+                window[canvasId + 'Chart'].destroy();
+            }
+
+            window[canvasId + 'Chart'] = new Chart(ctx, {
+                type: tipo,
+                data: {
+                    labels: etiquetas,
+                    datasets: [{
+                        data: datos,
+                        backgroundColor: Array.isArray(colores) ? colores : [colores],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Crear gráfico de línea
+        function crearGraficoLinea(canvasId, etiquetas, datos) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+
+            // Destruir gráfico existente si existe
+            if (window[canvasId + 'Chart']) {
+                window[canvasId + 'Chart'].destroy();
+            }
+
+            window[canvasId + 'Chart'] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: etiquetas,
+                    datasets: [{
+                        label: 'Denuncias',
+                        data: datos,
+                        borderColor: '#4CAF50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 10
+                        }
+                    }
+                }
+            });
+        }
+
+        // Actualizar filtros de reportes
+        function actualizarFiltrosReportes() {
+            const selectTipo = document.getElementById('reporteTipo');
+            const selectLugar = document.getElementById('reporteLugar');
+
+            // Limpiar opciones existentes
+            selectTipo.innerHTML = '<option value="">Todos</option>';
+            selectLugar.innerHTML = '<option value="">Todos</option>';
+
+            // Obtener valores únicos
+            const tipos = [...new Set(denuncias.map(d => d.tipo).filter(t => t))];
+            const lugares = [...new Set(denuncias.map(d => d.lugar).filter(l => l))];
+
+            // Agregar opciones
+            tipos.forEach(tipo => {
+                const option = document.createElement('option');
+                option.value = tipo;
+                option.textContent = tipo;
+                selectTipo.appendChild(option);
+            });
+
+            lugares.forEach(lugar => {
+                const option = document.createElement('option');
+                option.value = lugar;
+                option.textContent = lugar;
+                selectLugar.appendChild(option);
+            });
+        }
+
+        // Generar reporte
+        function generarReporte() {
+            const fechaDesde = document.getElementById('reporteFechaDesde').value;
+            const fechaHasta = document.getElementById('reporteFechaHasta').value;
+            const tipo = document.getElementById('reporteTipo').value;
+            const lugar = document.getElementById('reporteLugar').value;
+            const estado = document.getElementById('reporteEstado').value;
+            const comision = document.getElementById('reporteComision').value;
+
+            // Filtrar denuncias
+            let denunciasFiltradas = denuncias.filter(denuncia => {
+                let incluir = true;
+
+                // Filtro por fecha
+                if (fechaDesde && fechaHasta) {
+                    const fechaDenuncia = new Date(denuncia.fecha_creacion);
+                    const desde = parsearFecha(fechaDesde);
+                    const hasta = parsearFecha(fechaHasta);
+
+                    if (fechaDenuncia < desde || fechaDenuncia > hasta) {
+                        incluir = false;
+                    }
+                }
+
+                // Filtros por otros campos
+                if (tipo && denuncia.tipo !== tipo) incluir = false;
+                if (lugar && denuncia.lugar !== lugar) incluir = false;
+                if (estado && (denuncia.estado || 'pendiente') !== estado) incluir = false;
+                if (comision && denuncia.comision !== comision) incluir = false;
+
+                return incluir;
+            });
+
+            // Mostrar resultados
+            mostrarTablaReportes(denunciasFiltradas);
+        }
+
+        // Parsear fecha en formato dd-mm-yy
+        function parsearFecha(fechaStr) {
+            const partes = fechaStr.split('-');
+            if (partes.length !== 3) return new Date();
+
+            const dia = parseInt(partes[0]);
+            const mes = parseInt(partes[1]) - 1; // Los meses en JS van de 0 a 11
+            const año = 2000 + parseInt(partes[2]); // Asumir años 20xx
+
+            return new Date(año, mes, dia);
+        }
+
+        // Mostrar tabla de reportes
+        function mostrarTablaReportes(denunciasFiltradas) {
+            const tbody = document.getElementById('tablaReportesBody');
+            const tablaContainer = document.getElementById('tablaReportes');
+            const btnExcel = document.getElementById('btnExcel');
+
+            if (denunciasFiltradas.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="fas fa-search fa-2x text-muted mb-2"></i>
+                            <br>No se encontraron denuncias con los filtros seleccionados
+                        </td>
+                    </tr>
+                `;
+                tablaContainer.style.display = 'block';
+                btnExcel.style.display = 'none';
+                return;
+            }
+
+            const html = denunciasFiltradas.map(denuncia => {
+                const fecha = new Date(denuncia.fecha_creacion);
+                const fechaFormateada = formatearFecha(fecha);
+                const correlativo = denuncia.correlativo || '0';
+                const correlativoFormateado = `${correlativo}-${fechaFormateada}`;
+
+                // Calcular días en proceso
+                const hoy = new Date();
+                const diasProceso = Math.ceil((hoy - fecha) / (1000 * 60 * 60 * 24));
+
+                let diasClass = 'dias-verde';
+                let diasTexto = `${diasProceso} días`;
+
+                if (denuncia.estado === 'resuelto' || denuncia.estado === 'cancelado') {
+                    diasClass = 'dias-resuelto';
+                    diasTexto = 'Resuelto';
+                } else if (diasProceso > 15) {
+                    diasClass = 'dias-rojo';
+                } else if (diasProceso > 7) {
+                    diasClass = 'dias-amarillo';
+                }
+
+                // Estado
+                let estadoTexto = 'Pendiente';
+                if (denuncia.estado === 'proceso') estadoTexto = 'En Proceso';
+                else if (denuncia.estado === 'resuelto') estadoTexto = 'Resuelto';
+                else if (denuncia.estado === 'cancelado') estadoTexto = 'Cancelado';
+
+                return `
+                    <tr>
+                        <td><span class="badge badge-correlativo">#${correlativoFormateado}</span></td>
+                        <td><i class="fas fa-map-marker-alt text-success me-1"></i>${denuncia.lugar || 'PENDIENTE'}</td>
+                        <td><span class="badge badge-green">${denuncia.tipo || 'Sin tipo'}</span></td>
+                        <td><i class="fas fa-user text-success me-1"></i>${denuncia.tu_nombre || 'No especificado'}</td>
+                        <td><span class="badge badge-green">${denuncia.a_quien_se_reporto || 'No especificado'}</span></td>
+                        <td><span class="dias-badge ${diasClass}">${diasTexto}</span></td>
+                        <td><span class="badge badge-green">${estadoTexto}</span></td>
+                    </tr>
+                `;
+            }).join('');
+
+            tbody.innerHTML = html;
+            tablaContainer.style.display = 'block';
+            btnExcel.style.display = 'block';
+
+            // Guardar datos para exportación
+            window.datosReporte = denunciasFiltradas;
+        }
+
+        // Exportar a Excel
+        function exportarExcel() {
+            if (!window.datosReporte || window.datosReporte.length === 0) {
+                mostrarError('No hay datos para exportar');
+                return;
+            }
+
+            // Crear CSV
+            let csv = 'Correlativo,Fecha,Lugar,Tipo,Reportante,Reportado a,Comisión,Días,Estado,Descripción\n';
+
+            window.datosReporte.forEach(denuncia => {
+                const fecha = new Date(denuncia.fecha_creacion);
+                const fechaFormateada = formatearFecha(fecha);
+                const correlativo = denuncia.correlativo || '0';
+                const correlativoFormateado = `${correlativo}-${fechaFormateada}`;
+
+                const hoy = new Date();
+                const diasProceso = Math.ceil((hoy - fecha) / (1000 * 60 * 60 * 24));
+                const diasTexto = (denuncia.estado === 'resuelto' || denuncia.estado === 'cancelado') ? 'Resuelto' : `${diasProceso} días`;
+
+                let estadoTexto = 'Pendiente';
+                if (denuncia.estado === 'proceso') estadoTexto = 'En Proceso';
+                else if (denuncia.estado === 'resuelto') estadoTexto = 'Resuelto';
+                else if (denuncia.estado === 'cancelado') estadoTexto = 'Cancelado';
+
+                csv += `"${correlativoFormateado}","${fechaFormateada}","${denuncia.lugar || 'No especificado'}","${denuncia.tipo || 'Sin tipo'}","${denuncia.tu_nombre || 'No especificado'}","${denuncia.a_quien_se_reporto || 'No especificado'}","${denuncia.comision || 'No asignada'}","${diasTexto}","${estadoTexto}","${(denuncia.descripcion || '').replace(/"/g, '""')}"\n`;
+            });
+
+            // Descargar archivo
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `reporte_denuncias_${formatearFecha(new Date())}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            mostrarExito('Reporte exportado exitosamente');
+        }
+
+        // Funciones de WhatsApp
+        function copiarMensaje() {
+            navigator.clipboard.writeText(currentWhatsAppMessage).then(() => {
+                mostrarExito('Mensaje copiado al portapapeles');
+            }).catch(() => {
+                mostrarError('Error al copiar el mensaje');
+            });
+        }
+
+        function abrirWhatsApp() {
+            const mensaje = encodeURIComponent(currentWhatsAppMessage);
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+            let url;
+            if (isMobile) {
+                url = `whatsapp://send?text=${mensaje}`;
+            } else {
+                url = `https://web.whatsapp.com/send?text=${mensaje}`;
+            }
+
+            window.open(url, '_blank');
+        }
+
+        // Funciones de utilidad
+        function mostrarExito(mensaje) {
+            mostrarAlerta(mensaje, 'success');
+        }
+
+        function mostrarError(mensaje) {
+            mostrarAlerta(mensaje, 'danger');
+        }
+
+        function mostrarAlerta(mensaje, tipo) {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${tipo} alert-dismissible fade show position-fixed`;
+            alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alert.innerHTML = `
+                ${mensaje}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.body.appendChild(alert);
+
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
