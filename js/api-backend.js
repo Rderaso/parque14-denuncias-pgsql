@@ -5,7 +5,7 @@
 // Detectar automáticamente el entorno (local vs producción)
 const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:'
     ? 'http://localhost:3001/api'  // Desarrollo local
-    : 'https://p14-backend-production.up.railway.app/api';  // Producción (actualizar con URL de Railway)
+    : 'https://parque14-denuncias-pgsql.onrender.com/api';  // Producción - Backend en Render
 
 // Configuración global del backend
 window.backendAPI = {
