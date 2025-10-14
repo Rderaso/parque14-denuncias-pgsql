@@ -236,6 +236,38 @@ router.put('/:id/ocultar', async (req, res) => {
     }
 });
 
+// ====== DELETE /api/denuncias/:id - Eliminar denuncia ======
+router.delete('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await db.query(
+            'DELETE FROM denuncias WHERE id = $1 RETURNING *',
+            [id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Denuncia no encontrada'
+            });
+        }
+
+        console.log(`✅ Denuncia ${id} eliminada exitosamente`);
+
+        res.json({
+            success: true,
+            message: 'Denuncia eliminada exitosamente',
+            data: result.rows[0]
+        });
+    } catch (error) {
+        console.error('❌ Error eliminando denuncia:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al eliminar denuncia'
+        });
+    }
+});
+
 // ====== GET /api/denuncias/correlativo/next - Obtener próximo correlativo ======
 router.get('/correlativo/next', async (req, res) => {
     try {
