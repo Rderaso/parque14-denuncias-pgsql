@@ -166,22 +166,40 @@ router.get('/stats/comision', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { estado } = req.body;
+        const { estado, fecha_creacion } = req.body;
 
         // Validar que el estado sea válido
-        const estadosValidos = ['pendiente', 'proceso', 'resuelto', 'cancelado'];
-        if (estado && !estadosValidos.includes(estado)) {
-            return res.status(400).json({
-                success: false,
-                error: `Estado inválido. Debe ser uno de: ${estadosValidos.join(', ')}`
-            });
+        if (estado) {
+            const estadosValidos = ['pendiente', 'proceso', 'resuelto', 'cancelado'];
+            if (!estadosValidos.includes(estado)) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Estado inválido. Debe ser uno de: ${estadosValidos.join(', ')}`
+                });
+            }
         }
 
-        // Actualizar el estado
-        const result = await db.query(
-            'UPDATE denuncias SET estado = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
-            [estado, id]
-        );
+        // Construir query dinámicamente
+        let query = 'UPDATE denuncias SET ';
+        let params = [];
+        let paramIndex = 1;
+
+        if (estado) {
+            query += `estado = $${paramIndex}, `;
+            params.push(estado);
+            paramIndex++;
+        }
+
+        if (fecha_creacion) {
+            query += `fecha_creacion = $${paramIndex}, `;
+            params.push(fecha_creacion);
+            paramIndex++;
+        }
+
+        query += `updated_at = CURRENT_TIMESTAMP WHERE id = $${paramIndex} RETURNING *`;
+        params.push(id);
+
+        const result = await db.query(query, params);
 
         if (result.rows.length === 0) {
             return res.status(404).json({
@@ -190,7 +208,7 @@ router.put('/:id', async (req, res) => {
             });
         }
 
-        console.log(`✅ Denuncia ${id} actualizada a estado: ${estado}`);
+        console.log(`✅ Denuncia ${id} actualizada`);
 
         res.json({
             success: true,
